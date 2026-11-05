@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
     <title>予定カウントダウン</title>
     <!-- iOSホーム画面追加用の設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -300,8 +301,26 @@
         reader.readAsText(file);
     }
 
-    render();
-    setInterval(render, 60000); // 1分ごとに更新
+    // iPhoneの時計の「00秒」に同期して更新する仕組み
+    let timerId = null;
+    function syncTimer() {
+        render();
+        if (timerId) clearTimeout(timerId);
+
+        const current = new Date();
+        // 次の00秒までのミリ秒数を動的に計算
+        const delay = (60 - current.getSeconds()) * 1000 - current.getMilliseconds();
+        timerId = setTimeout(syncTimer, delay);
+    }
+
+    // iPhoneのスリープ解除時やアプリ復帰時にも即座に00秒同期を再実行
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            syncTimer();
+        }
+    });
+
+    syncTimer();
 </script>
 
 </body>
