@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>予定カウントダウン</title>
+    <!-- iOSホーム画面追加用の設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #2b2b2b;
+            --text-color: #ffffff;
+            --sub-text: #aaaaaa;
+            --primary-btn: #3b82f6;
+            --danger-btn: #d9534f;
+            --border-color: #444444;
+        }
+
+        body {
+            font-family: "メイリオ", Meiryo, "Hiragino Kaku Gothic ProN", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .input-card {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: var(--sub-text);
+        }
+
+        input[type="text"], input[type="datetime-local"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: #333333;
+            color: #ffffff;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--primary-btn);
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .io-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .io-buttons button {
+            background-color: #555555;
+            font-size: 0.8rem;
+            padding: 8px;
+            font-weight: normal;
+        }
+
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .schedule-card {
+            background-color: var(--card-bg);
+            padding: 12px 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        .title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .target-dt {
+            font-size: 0.75rem;
+            color: var(--sub-text);
+            margin-bottom: 4px;
+        }
+
+        .remaining {
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .remaining.future { color: #3b82f6; }
+        .remaining.past { color: #ef4444; }
+
+        .btn-delete {
+            width: auto;
+            padding: 6px 12px;
+            background-color: var(--danger-btn);
+            font-size: 0.8rem;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        #file-input { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="input-card">
+        <div class="form-group">
+            <label for="title-input">タイトル:</label>
+            <input type="text" id="title-input" placeholder="例: 歯医者">
+        </div>
+        <div class="form-group">
+            <label for="dt-input">日時:</label>
+            <input type="datetime-local" id="dt-input">
+        </div>
+        <button onclick="addSchedule()">予定を保存</button>
+
+        <div class="io-buttons">
+            <button onclick="exportJSON()">JSON書き出し</button>
+            <button onclick="document.getElementById('file-input').click()">JSON読み込み</button>
+            <input type="file" id="file-input" accept=".json" onchange="importJSON(event)">
+        </div>
+    </div>
+
+    <h2>予定一覧</h2>
+    <div id="schedule-list" class="schedule-list"></div>
+</div>
+
+<script>
+    let schedules = JSON.parse(localStorage.getItem('yotei_data') || '[]');
+
+    // 日時初期値の設定
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('dt-input').value = now.toISOString().slice(0, 16);
+
+    function saveData() {
+        localStorage.setItem('yotei_data', JSON.stringify(schedules));
+        render();
+    }
+
+    function addSchedule() {
+        const title = document.getElementById('title-input').value.trim();
+        const dtVal = document.getElementById('dt-input').value;
+
+        if (!title) {
+            alert('タイトルを入力してください。');
+            return;
+        }
+        if (!dtVal) {
+            alert('日時を指定してください。');
+            return;
+        }
+
+        schedules.push({ title: title, target_dt: dtVal });
+        document.getElementById('title-input').value = '';
+        saveData();
+    }
+
+    function deleteSchedule(index) {
+        const item = schedules[index];
+        if (confirm(`予定「${item.title}」を削除してもよろしいですか？`)) {
+            schedules.splice(index, 1);
+            saveData();
+        }
+    }
+
+    function calcDiff(target, now) {
+        let y = target.getFullYear() - now.getFullYear();
+        let m = target.getMonth() - now.getMonth();
+        let d = target.getDate() - now.getDate();
+        let hh = target.getHours() - now.getHours();
+        let mm = target.getMinutes() - now.getMinutes();
+
+        if (mm < 0) { mm += 60; hh--; }
+        if (hh < 0) { hh += 24; d--; }
+        if (d < 0) {
+            const prevMonthLastDay = new Date(target.getFullYear(), target.getMonth(), 0).getDate();
+            d += prevMonthLastDay;
+            m--;
+        }
+        if (m < 0) { m += 12; y--; }
+
+        let parts = [];
+        if (y > 0) parts.push(`${y}年`);
+        if (m > 0) parts.push(`${m}ヶ月`);
+        if (d > 0) parts.push(`${d}日`);
+        parts.push(`${String(hh).padStart(2, '0')}時間`);
+        parts.push(`${String(mm).padStart(2, '0')}分`);
+
+        return parts.join(' ');
+    }
+
+    function render() {
+        schedules.sort((a, b) => new Date(a.target_dt) - new Date(b.target_dt));
+        const listEl = document.getElementById('schedule-list');
+        listEl.innerHTML = '';
+
+        const curr = new Date();
+
+        schedules.forEach((item, idx) => {
+            const target = new Date(item.target_dt);
+            const isFuture = target > curr;
+            const diffStr = isFuture ? calcDiff(target, curr) : calcDiff(curr, target);
+            
+            const formattedDt = `${target.getFullYear()}/${String(target.getMonth()+1).padStart(2,'0')}/${String(target.getDate()).padStart(2,'0')} ${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
+
+            const card = document.createElement('div');
+            card.className = 'schedule-card';
+            card.innerHTML = `
+                <div class="info">
+                    <div class="title">${item.title}</div>
+                    <div class="target-dt">予定 (開始) : ${formattedDt}</div>
+                    <div class="remaining ${isFuture ? 'future' : 'past'}">
+                        ${isFuture ? '残り (開始) :' : '経過 (開始) :'} ${diffStr} ${isFuture ? '' : '経過'}
+                    </div>
+                </div>
+                <button class="btn-delete" onclick="deleteSchedule(${idx})">削除</button>
+            `;
+            listEl.appendChild(card);
+        });
+    }
+
+    function exportJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(schedules, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "yotei.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) {
+                    schedules = imported;
+                    saveData();
+                    alert('yotei.json を読み込みました。');
+                } else if (imported.schedules && Array.isArray(imported.schedules)) {
+                    schedules = imported.schedules;
+                    saveData();
+                    alert('yotei.json を読み込みました。');
+                }
+            } catch (err) {
+                alert('JSONファイルの読み込みに失敗しました。');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    render();
+    setInterval(render, 60000); // 1分ごとに更新
+</script>
+
+</body>
+</html>
