@@ -61,6 +61,7 @@
 
         input[type="text"], input[type="datetime-local"] {
             width: 100%;
+            max-width: 100%;
             padding: 10px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
@@ -68,6 +69,9 @@
             color: #ffffff;
             font-size: 0.95rem;
             box-sizing: border-box;
+            -webkit-appearance: none;
+            appearance: none;
+            display: block;
         }
 
         button {
@@ -308,7 +312,6 @@
         if (timerId) clearTimeout(timerId);
 
         const current = new Date();
-        // 次の00秒までのミリ秒数を動的に計算
         const delay = (60 - current.getSeconds()) * 1000 - current.getMilliseconds();
         timerId = setTimeout(syncTimer, delay);
     }
