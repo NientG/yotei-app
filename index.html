@@ -1,330 +1,347 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="robots" content="noindex, nofollow">
-    <title>予定カウントダウン</title>
-    <!-- iOSホーム画面追加用の設定 -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <style>
-        :root {
-            --bg-color: #1a1a1a;
-            --card-bg: #2b2b2b;
-            --text-color: #ffffff;
-            --sub-text: #aaaaaa;
-            --primary-btn: #3b82f6;
-            --danger-btn: #d9534f;
-            --border-color: #444444;
-        }
-
-        body {
-            font-family: "メイリオ", Meiryo, "Hiragino Kaku Gothic ProN", sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 480px;
-        }
-
-        h2 {
-            font-size: 1.1rem;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-
-        .input-card {
-            background-color: var(--card-bg);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
-
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            margin-bottom: 5px;
-            color: var(--sub-text);
-        }
-
-        input[type="text"], input[type="datetime-local"] {
-            width: 100%;
-            max-width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            background-color: #333333;
-            color: #ffffff;
-            font-size: 0.95rem;
-            box-sizing: border-box;
-            -webkit-appearance: none;
-            appearance: none;
-            display: block;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            background-color: var(--primary-btn);
-            color: white;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        .io-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .io-buttons button {
-            background-color: #555555;
-            font-size: 0.8rem;
-            padding: 8px;
-            font-weight: normal;
-        }
-
-        .schedule-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .schedule-card {
-            background-color: var(--card-bg);
-            padding: 12px 15px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .info {
-            flex-grow: 1;
-            margin-right: 10px;
-        }
-
-        .title {
-            font-size: 1rem;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .target-dt {
-            font-size: 0.75rem;
-            color: var(--sub-text);
-            margin-bottom: 4px;
-        }
-
-        .remaining {
-            font-size: 0.85rem;
-            font-weight: bold;
-        }
-
-        .remaining.future { color: #3b82f6; }
-        .remaining.past { color: #ef4444; }
-
-        .btn-delete {
-            width: auto;
-            padding: 6px 12px;
-            background-color: var(--danger-btn);
-            font-size: 0.8rem;
-            border-radius: 6px;
-            white-space: nowrap;
-        }
-
-        #file-input { display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="予定">
+<title>予定カウントダウン</title>
+<style>
+:root {
+  --bg: #1a1a1a; --card: #2b2b2b; --text: #fff; --sub: #aaa;
+  --primary: #3b82f6; --danger: #d9534f; --border: #444;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: "メイリオ", Meiryo, "Hiragino Kaku Gothic ProN", sans-serif;
+  background: var(--bg); color: var(--text); margin: 0;
+  padding: max(15px, env(safe-area-inset-top)) max(15px, env(safe-area-inset-right))
+           max(15px, env(safe-area-inset-bottom)) max(15px, env(safe-area-inset-left));
+  display: flex; justify-content: center;
+}
+.container { width: 100%; max-width: 480px; }
+h2 { font-size: 1.1rem; margin: 0 0 10px; }
+.input-card { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+.input-card.editing { outline: 2px solid var(--primary); }
+.form-group { margin-bottom: 12px; }
+label { display: block; font-size: .85rem; margin-bottom: 5px; color: var(--sub); }
+input[type="text"], input[type="datetime-local"] {
+  width: 100%; min-height: 44px; padding: 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: #333; color: #fff;
+  font-size: 16px; /* 16px未満だとiOSで入力時に拡大される */
+  -webkit-appearance: none; appearance: none; display: block;
+}
+button {
+  width: 100%; padding: 12px; border: none; border-radius: 6px;
+  background: var(--primary); color: #fff; font-weight: bold; font-size: 1rem; cursor: pointer;
+}
+.row { display: flex; gap: 10px; }
+.row.top { margin-top: 10px; }
+.sub-btn { background: #555; font-size: .8rem; padding: 8px; font-weight: normal; }
+#cancel-btn { display: none; background: #555; }
+.editing #cancel-btn { display: block; }
+.schedule-list { display: flex; flex-direction: column; gap: 10px; }
+.schedule-card {
+  background: var(--card); padding: 12px 15px; border-radius: 10px;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.info { flex: 1; min-width: 0; }
+.title { font-size: 1rem; font-weight: bold; margin-bottom: 4px; overflow-wrap: anywhere; }
+.target-dt { font-size: .75rem; color: var(--sub); margin-bottom: 4px; }
+.remaining { font-size: .85rem; font-weight: bold; }
+.remaining.future { color: #3b82f6; }
+.remaining.past { color: #ef4444; }
+.actions { display: flex; flex-direction: column; gap: 6px; }
+.actions button { width: auto; padding: 6px 12px; font-size: .8rem; white-space: nowrap; }
+.btn-edit { background: #555; }
+.btn-delete { background: var(--danger); }
+.empty { color: var(--sub); text-align: center; padding: 20px 0; font-size: .9rem; }
+#file-input { display: none; }
+</style>
 </head>
 <body>
-
 <div class="container">
-    <div class="input-card">
-        <div class="form-group">
-            <label for="title-input">タイトル:</label>
-            <input type="text" id="title-input" placeholder="例: 歯医者">
-        </div>
-        <div class="form-group">
-            <label for="dt-input">日時:</label>
-            <input type="datetime-local" id="dt-input">
-        </div>
-        <button onclick="addSchedule()">予定を保存</button>
-
-        <div class="io-buttons">
-            <button onclick="exportJSON()">JSON書き出し</button>
-            <button onclick="document.getElementById('file-input').click()">JSON読み込み</button>
-            <input type="file" id="file-input" accept=".json" onchange="importJSON(event)">
-        </div>
+  <div class="input-card" id="input-card">
+    <div class="form-group">
+      <label for="title-input">タイトル:</label>
+      <input type="text" id="title-input" placeholder="例: 歯医者" enterkeyhint="done">
     </div>
+    <div class="form-group">
+      <label for="dt-input">日時:</label>
+      <input type="datetime-local" id="dt-input">
+    </div>
+    <div class="row">
+      <button id="save-btn">予定を保存</button>
+      <button id="cancel-btn">キャンセル</button>
+    </div>
+    <div class="row top">
+      <button class="sub-btn" id="export-btn">JSON書き出し</button>
+      <button class="sub-btn" id="import-btn">JSON読み込み</button>
+      <input type="file" id="file-input" accept=".json,application/json">
+    </div>
+  </div>
 
-    <h2>予定一覧</h2>
-    <div id="schedule-list" class="schedule-list"></div>
+  <h2>予定一覧</h2>
+  <div id="schedule-list" class="schedule-list"></div>
 </div>
 
 <script>
-    let schedules = JSON.parse(localStorage.getItem('yotei_data') || '[]');
+const STORAGE_KEY = 'yotei_data';
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
 
-    // 日時初期値の設定
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('dt-input').value = now.toISOString().slice(0, 16);
+let schedules = [];
+let editingId = null;
 
-    function saveData() {
-        localStorage.setItem('yotei_data', JSON.stringify(schedules));
-        render();
+/* ---------- 日時ユーティリティ ---------- */
+// "2026-10-14T14:30" / "2026/10/14 14:30" の両方を受け付け、内部形式(T区切り)に正規化。不正ならnull
+function normalizeDt(s) {
+  const m = /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T ](\d{1,2}):(\d{2})/.exec(String(s || '').trim());
+  if (!m) return null;
+  const [y, mo, d, h, mi] = m.slice(1).map(Number);
+  const dt = new Date(y, mo - 1, d, h, mi);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+  return `${y}-${pad(mo)}-${pad(d)}T${pad(h)}:${pad(mi)}`;
+}
+// ローカル時刻として解釈（Safariの日付パース差異を避ける）
+function toDate(s) {
+  const [d, t] = s.split('T');
+  const [y, mo, da] = d.split('-').map(Number);
+  const [h, mi] = t.split(':').map(Number);
+  return new Date(y, mo - 1, da, h, mi);
+}
+const toSlash = s => s.replace(/-/g, '/').replace('T', ' ');   // Python版の形式
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+// 月を加算（月末は、その月の末日に丸める）
+function addMonths(date, n) {
+  const d = new Date(date);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + n);
+  d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+  return d;
+}
+
+// from → to（to >= from）の差を「〇年 〇ヶ月 〇日 〇時間 〇分」にする
+function calcDiff(to, from) {
+  let months = (to.getFullYear() - from.getFullYear()) * 12 + to.getMonth() - from.getMonth();
+  if (addMonths(from, months) > to) months--;
+  const rest = to - addMonths(from, months);
+  const d = Math.floor(rest / 86400000);
+  const hh = Math.floor(rest % 86400000 / 3600000);
+  const mm = Math.floor(rest % 3600000 / 60000);
+  const y = Math.floor(months / 12), m = months % 12;
+
+  const parts = [];
+  if (y > 0) parts.push(`${y}年`);
+  if (m > 0) parts.push(`${m}ヶ月`);
+  if (d > 0) parts.push(`${d}日`);
+  parts.push(`${pad(hh)}時間`, `${pad(mm)}分`);
+  return parts.join(' ');
+}
+
+/* ---------- 保存・読み込み ---------- */
+// 配列から有効な予定だけを取り出す（idが無ければ付与）
+function sanitize(list) {
+  const out = [];
+  let skipped = 0;
+  for (const it of Array.isArray(list) ? list : []) {
+    const title = it && typeof it.title === 'string' ? it.title.trim() : '';
+    const dt = it ? normalizeDt(it.target_dt) : null;
+    if (title && dt) out.push({ id: (it.id && String(it.id)) || newId(), title, target_dt: dt });
+    else skipped++;
+  }
+  return { out, skipped };
+}
+
+function loadData() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    schedules = sanitize(Array.isArray(raw) ? raw : raw && raw.schedules).out;
+  } catch (e) {
+    schedules = [];
+  }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
+  } catch (e) {
+    alert('保存に失敗しました。ブラウザの保存容量や設定を確認してください。');
+  }
+  render();
+}
+
+/* ---------- 追加・編集・削除 ---------- */
+function setDefaultDt() {
+  const n = new Date();
+  $('dt-input').value = `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}`;
+}
+
+function endEdit() {
+  editingId = null;
+  $('input-card').classList.remove('editing');
+  $('save-btn').textContent = '予定を保存';
+  $('title-input').value = '';
+  setDefaultDt();
+}
+
+function startEdit(id) {
+  const item = schedules.find(s => s.id === id);
+  if (!item) return;
+  editingId = id;
+  $('title-input').value = item.title;
+  $('dt-input').value = item.target_dt;
+  $('input-card').classList.add('editing');
+  $('save-btn').textContent = '更新';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function saveSchedule() {
+  const title = $('title-input').value.trim();
+  const dt = normalizeDt($('dt-input').value);
+  if (!title) { alert('タイトルを入力してください。'); return; }
+  if (!dt) { alert('日時を指定してください。'); return; }
+
+  if (editingId) {
+    const item = schedules.find(s => s.id === editingId);
+    if (item) { item.title = title; item.target_dt = dt; }
+    endEdit();
+  } else {
+    schedules.push({ id: newId(), title, target_dt: dt });
+    $('title-input').value = '';
+  }
+  saveData();
+}
+
+function deleteSchedule(id) {
+  const item = schedules.find(s => s.id === id);
+  if (!item || !confirm(`予定「${item.title}」を削除してもよろしいですか？`)) return;
+  schedules = schedules.filter(s => s.id !== id);
+  if (editingId === id) endEdit();
+  saveData();
+}
+
+/* ---------- 描画（タイトルはtextContentで入れるのでXSSにならない） ---------- */
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function render() {
+  schedules.sort((a, b) => a.target_dt.localeCompare(b.target_dt));
+  const list = $('schedule-list');
+  list.replaceChildren();
+
+  if (!schedules.length) {
+    list.append(el('div', 'empty', '予定がありません'));
+    return;
+  }
+
+  const now = new Date();
+  for (const item of schedules) {
+    const target = toDate(item.target_dt);
+    const future = target > now;
+    const diff = future ? calcDiff(target, now) : calcDiff(now, target);
+
+    const info = el('div', 'info');
+    info.append(
+      el('div', 'title', item.title),
+      el('div', 'target-dt', `予定 (開始) : ${toSlash(item.target_dt)}`),
+      el('div', 'remaining ' + (future ? 'future' : 'past'),
+         future ? `残り (開始) : ${diff}` : `経過 (開始) : ${diff} 経過`)
+    );
+
+    const edit = el('button', 'btn-edit', '編集');
+    edit.addEventListener('click', () => startEdit(item.id));
+    const del = el('button', 'btn-delete', '削除');
+    del.addEventListener('click', () => deleteSchedule(item.id));
+    const actions = el('div', 'actions');
+    actions.append(edit, del);
+
+    const card = el('div', 'schedule-card');
+    card.append(info, actions);
+    list.append(card);
+  }
+}
+
+/* ---------- JSON書き出し・読み込み（Python版と同じ形式） ---------- */
+function exportJSON() {
+  const data = {
+    schedules: schedules.map(s => ({ title: s.title, target_dt: toSlash(s.target_dt) }))
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'yotei.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function importJSON(event) {
+  const input = event.target;
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const list = Array.isArray(data) ? data : data && data.schedules;
+      if (!Array.isArray(list)) throw new Error('形式が違います');
+
+      const { out, skipped } = sanitize(list);
+      if (!out.length && list.length) throw new Error('有効な予定がありません');
+
+      const msg = `現在の予定 ${schedules.length} 件を、読み込んだ ${out.length} 件で置き換えます。よろしいですか？`
+                + (skipped ? `\n（読み込めない ${skipped} 件は除外されます）` : '');
+      if (!confirm(msg)) return;
+
+      schedules = out;
+      endEdit();
+      saveData();
+    } catch (err) {
+      alert('JSONファイルの読み込みに失敗しました。');
     }
+  };
+  reader.onerror = () => alert('ファイルを読み込めませんでした。');
+  reader.readAsText(file);
+  input.value = '';   // 同じファイルを続けて選んでも反応するように
+}
 
-    function addSchedule() {
-        const title = document.getElementById('title-input').value.trim();
-        const dtVal = document.getElementById('dt-input').value;
+/* ---------- イベント登録 ---------- */
+$('save-btn').addEventListener('click', saveSchedule);
+$('cancel-btn').addEventListener('click', endEdit);
+$('export-btn').addEventListener('click', exportJSON);
+$('import-btn').addEventListener('click', () => $('file-input').click());
+$('file-input').addEventListener('change', importJSON);
+$('title-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) saveSchedule();   // 日本語変換中のEnterは無視
+});
 
-        if (!title) {
-            alert('タイトルを入力してください。');
-            return;
-        }
-        if (!dtVal) {
-            alert('日時を指定してください。');
-            return;
-        }
+/* ---------- 毎分0秒に同期して更新 ---------- */
+let timerId = null;
+function syncTimer() {
+  render();
+  clearTimeout(timerId);
+  const n = new Date();
+  // setTimeoutは稀に早く発火するため +50ms
+  timerId = setTimeout(syncTimer, (60 - n.getSeconds()) * 1000 - n.getMilliseconds() + 50);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncTimer(); });
 
-        schedules.push({ title: title, target_dt: dtVal });
-        document.getElementById('title-input').value = '';
-        saveData();
-    }
-
-    function deleteSchedule(index) {
-        const item = schedules[index];
-        if (confirm(`予定「${item.title}」を削除してもよろしいですか？`)) {
-            schedules.splice(index, 1);
-            saveData();
-        }
-    }
-
-    function calcDiff(target, now) {
-        let y = target.getFullYear() - now.getFullYear();
-        let m = target.getMonth() - now.getMonth();
-        let d = target.getDate() - now.getDate();
-        let hh = target.getHours() - now.getHours();
-        let mm = target.getMinutes() - now.getMinutes();
-
-        if (mm < 0) { mm += 60; hh--; }
-        if (hh < 0) { hh += 24; d--; }
-        if (d < 0) {
-            const prevMonthLastDay = new Date(target.getFullYear(), target.getMonth(), 0).getDate();
-            d += prevMonthLastDay;
-            m--;
-        }
-        if (m < 0) { m += 12; y--; }
-
-        let parts = [];
-        if (y > 0) parts.push(`${y}年`);
-        if (m > 0) parts.push(`${m}ヶ月`);
-        if (d > 0) parts.push(`${d}日`);
-        parts.push(`${String(hh).padStart(2, '0')}時間`);
-        parts.push(`${String(mm).padStart(2, '0')}分`);
-
-        return parts.join(' ');
-    }
-
-    function render() {
-        schedules.sort((a, b) => new Date(a.target_dt) - new Date(b.target_dt));
-        const listEl = document.getElementById('schedule-list');
-        listEl.innerHTML = '';
-
-        const curr = new Date();
-
-        schedules.forEach((item, idx) => {
-            const target = new Date(item.target_dt);
-            const isFuture = target > curr;
-            const diffStr = isFuture ? calcDiff(target, curr) : calcDiff(curr, target);
-            
-            const formattedDt = `${target.getFullYear()}/${String(target.getMonth()+1).padStart(2,'0')}/${String(target.getDate()).padStart(2,'0')} ${String(target.getHours()).padStart(2,'0')}:${String(target.getMinutes()).padStart(2,'0')}`;
-
-            const card = document.createElement('div');
-            card.className = 'schedule-card';
-            card.innerHTML = `
-                <div class="info">
-                    <div class="title">${item.title}</div>
-                    <div class="target-dt">予定 (開始) : ${formattedDt}</div>
-                    <div class="remaining ${isFuture ? 'future' : 'past'}">
-                        ${isFuture ? '残り (開始) :' : '経過 (開始) :'} ${diffStr} ${isFuture ? '' : '経過'}
-                    </div>
-                </div>
-                <button class="btn-delete" onclick="deleteSchedule(${idx})">削除</button>
-            `;
-            listEl.appendChild(card);
-        });
-    }
-
-    function exportJSON() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(schedules, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", "yotei.json");
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-    }
-
-    function importJSON(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const imported = JSON.parse(e.target.result);
-                if (Array.isArray(imported)) {
-                    schedules = imported;
-                    saveData();
-                    alert('yotei.json を読み込みました。');
-                } else if (imported.schedules && Array.isArray(imported.schedules)) {
-                    schedules = imported.schedules;
-                    saveData();
-                    alert('yotei.json を読み込みました。');
-                }
-            } catch (err) {
-                alert('JSONファイルの読み込みに失敗しました。');
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    // iPhoneの時計の「00秒」に同期して更新する仕組み
-    let timerId = null;
-    function syncTimer() {
-        render();
-        if (timerId) clearTimeout(timerId);
-
-        const current = new Date();
-        const delay = (60 - current.getSeconds()) * 1000 - current.getMilliseconds();
-        timerId = setTimeout(syncTimer, delay);
-    }
-
-    // iPhoneのスリープ解除時やアプリ復帰時にも即座に00秒同期を再実行
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            syncTimer();
-        }
-    });
-
-    syncTimer();
+loadData();
+setDefaultDt();
+syncTimer();
 </script>
-
 </body>
 </html>
