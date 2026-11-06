@@ -92,6 +92,7 @@ button {
 const STORAGE_KEY = 'yotei_data';
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
+const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
 let schedules = [];
 let editingId = null;
@@ -113,8 +114,14 @@ function toDate(s) {
   const [h, mi] = t.split(':').map(Number);
   return new Date(y, mo - 1, da, h, mi);
 }
-const toSlash = s => s.replace(/-/g, '/').replace('T', ' ');   // Python版の形式
+const toSlash = s => s.replace(/-/g, '/').replace('T', ' ');   // Python版の形式（書き出し用）
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+// 画面表示用: 2026/10/14 (水) 14:30
+function formatDisplay(s) {
+  const [d, t] = s.split('T');
+  return `${d.replace(/-/g, '/')} (${WEEKDAYS[toDate(s).getDay()]}) ${t}`;
+}
 
 // 月を加算（月末は、その月の末日に丸める）
 function addMonths(date, n) {
@@ -253,7 +260,7 @@ function render() {
     const info = el('div', 'info');
     info.append(
       el('div', 'title', item.title),
-      el('div', 'target-dt', `予定 (開始) : ${toSlash(item.target_dt)}`),
+      el('div', 'target-dt', `予定 (開始) : ${formatDisplay(item.target_dt)}`),
       el('div', 'remaining ' + (future ? 'future' : 'past'),
          future ? `残り (開始) : ${diff}` : `経過 (開始) : ${diff} 経過`)
     );
@@ -271,7 +278,7 @@ function render() {
   }
 }
 
-/* ---------- JSON書き出し・読み込み（Python版と同じ形式） ---------- */
+/* ---------- JSON書き出し・読み込み（Python版と同じ形式。曜日は含めない） ---------- */
 function exportJSON() {
   const data = {
     schedules: schedules.map(s => ({ title: s.title, target_dt: toSlash(s.target_dt) }))
