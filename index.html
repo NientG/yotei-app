@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="予定">
+<link rel="manifest" href="manifest.json">
 <title>予定カウントダウン</title>
 <style>
 :root {
@@ -349,6 +350,11 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) sync
 loadData();
 setDefaultDt();
 syncTimer();
+
+/* ---------- PWA用 Service Worker登録 ---------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
 </script>
 </body>
 </html>
