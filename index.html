@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="予定">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>予定カウントダウン</title>
 <style>
 :root {
@@ -41,7 +42,7 @@ button {
 }
 .row { display: flex; gap: 10px; }
 .row.top { margin-top: 10px; }
-.sub-btn { background: #555; font-size: .8rem; padding: 8px; font-weight: normal; }
+.sub-btn { background: #555; font-size: .8rem; padding: 12px 8px; font-weight: normal; }
 #cancel-btn { display: none; background: #555; }
 .editing #cancel-btn { display: block; }
 .schedule-list { display: flex; flex-direction: column; gap: 10px; }
@@ -346,14 +347,22 @@ function syncTimer() {
   timerId = setTimeout(syncTimer, (60 - n.getSeconds()) * 1000 - n.getMilliseconds() + 50);
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) syncTimer(); });
+window.addEventListener('pageshow', syncTimer);   // iOS PWA復帰対策
 
 loadData();
 setDefaultDt();
 syncTimer();
 
+// ブラウザによるデータ自動削除をできるだけ防ぐ
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().catch(() => {});
+}
+
 /* ---------- PWA用 Service Worker登録 ---------- */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
 }
 </script>
 </body>
